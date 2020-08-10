@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>课堂投票-教师端</title>
+    <!--Bulma-->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+    <!--Vue-->
+    <!-- production version, optimized for size and speed -->
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <!--Buefy-->
+    <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
+    <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
+    <!--Material Design-->
+    <link rel="stylesheet" href="https://cdn.materialdesignicons.com/5.3.45/css/materialdesignicons.min.css">
+    <!--Axios-->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <section class="hero">
+            <div class="hero-body">
+                <div class="container">
+                    <h1 class="title has-text-centered">课堂投票-教师端</h1>
+                </div>
+            </div>
+        </section>
+
+        <section class="hero is-small" v-if="currentStep == 'questionTypeStep'">
+            <div class="hero-body">
+                <div class="container has-text-centered">
+                    <h2 class="title is-4">
+                        请选择题目类型
+                    </h2>
+                    <div class="block">
+                        <b-radio v-model="questionType" name="question type" native-value="existing">
+                            已有题目
+                        </b-radio>
+                        <b-radio v-model="questionType" name="question type" native-value="new">
+                            新题目
+                        </b-radio>
+                    </div>
+                    <button class="button is-rounded" v-on:click="currentStep = 'passWordStep'">下一步</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="hero is-small" v-if="currentStep == 'passWordStep'">
+            <div class="hero-body">
+                <div class="container has-text-centered">
+                    <div class='columns' v-if="questionType == 'existing'">
+                        <div class="column is-6 is-offset-3">
+                            <h2 class="title is-4">
+                                请验证题目号和密码
+                            </h2>
+                            <b-field label="题目号">
+                                <b-input v-model="questionId" placeholder="请输入题目号" required pattern="[0-9A-Fa-f]{24}"
+                                    minlength="23" maxlength="24"></b-input>
+                            </b-field>
+                            <b-field label="密码">
+                                <b-input v-model="questionPassword" placeholder="请输入密码" required type="password" password-reveal></b-input>
+                            </b-field>
+                            <button class="button is-rounded" v-on:click="verifyPassword">确定</button>
+                        </div>
+                    </div>
+                    <div class="columns" v-if="questionType == 'new'">
+                        <div class="column is-6 is-offset-3">
+                            <h2 class="title is-4">
+                                请输入一个密码
+                            </h2>
+                            <b-field label="密码">
+                                <b-input v-model="questionPassword" placeholder="请输入密码" required type="password" password-reveal></b-input>
+                            </b-field>
+                            <button class="button is-rounded" v-on:click="verifyPassword">确定</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="hero is-small" v-if="currentStep == 'editQuestionStep'">
+            <div class="hero-body">
+                <div class="container has-text-centered">
+                    <div class="columns">
+                        <div class="column is-6 is-offset-3">
+                            <h2 class="title is-4">
+                                请输入题目和选项
+                            </h2>
+                            <b-field label="题目题干">
+                                <b-input type="textarea" minlength="2" maxlength="500" placeholder="请输入题目">
+                                </b-input>
+                            </b-field>
+                            <b-field label="第一个选项">
+                                <b-input minlength="1" maxlength="500" placeholder="请输入第一个选项" expanded>
+                                </b-input>
+                            </b-field>
+                            <b-field label="第二个选项">
+                                <b-input minlength="1" maxlength="500" placeholder="请输入第二个选项" expanded>
+                                </b-input>
+                            </b-field>
+                            <b-field label="第三个选项">
+                                <b-input minlength="1" maxlength="500" placeholder="请输入第三个选项" expanded>
+                                </b-input>
+                            </b-field>
+                            <b-field label="第四个选项">
+                                <b-input minlength="1" maxlength="500" placeholder="请输入第四个选项" expanded>
+                                </b-input>
+                            </b-field>
+                            <p><b>正确选项</b></p>
+                            <div class="block">
+                                <b-checkbox type="is-success" native-value="A" v-model="correctChoices">
+                                    选项一
+                                </b-checkbox>
+                                <b-checkbox type="is-success" native-value="B" v-model="correctChoices">
+                                    选项二
+                                </b-checkbox>
+                                <b-checkbox type="is-success" native-value="C" v-model="correctChoices">
+                                    选项三
+                                </b-checkbox>
+                                <b-checkbox type="is-success" native-value="D" v-model="correctChoices">
+                                    选项四
+                                </b-checkbox>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+    <script>
+        var newApp = new Vue({
+            el: "#app",
+            data: {
+                currentStep: "questionTypeStep",
+                questionType: "existing",
+                questionId: "",
+                questionPassword: "",
+                correctChoices: []
+            },
+            methods: {
+                verifyPassword: function () {
+                    // if it's existing question type, check question id and password with server
+                    if (this.questionType == "existing") {
+                        url = "https://webhooks.mongodb-realm.com/api/client/v2.0/app/inclass-dhzfl/service/inClassHttp/incoming_webhook/checkPassword" + "?questionId=" + this.questionId + "&questionPassword=" + this.questionPassword;
+                        axios.get(url)
+                            .then(response => {
+                                if (response.data == "Matched") {
+                                    this.currentStep = "editQuestionStep";
+                                } else if (response.data == "NoMatch") {
+                                    alert("请检查题目号和密码是否正确");
+                                }
+                            })
+                    } else {
+                        this.currentStep = "editQuestionStep";
+                    }
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
