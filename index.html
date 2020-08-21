@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="https://cdn.materialdesignicons.com/5.3.45/css/materialdesignicons.min.css">
     <!--Axios-->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!--QR code generator-->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-js-package@1.0.4/qrcode.min.js"></script>
 </head>
 
 <body>
@@ -61,7 +63,8 @@
                                     minlength="23" maxlength="24"></b-input>
                             </b-field>
                             <b-field label="密码">
-                                <b-input v-model="questionPassword" placeholder="请输入密码" required type="password" password-reveal></b-input>
+                                <b-input v-model="questionPassword" placeholder="请输入密码" required type="password"
+                                    password-reveal></b-input>
                             </b-field>
                             <button class="button is-rounded" v-on:click="verifyPassword">确定</button>
                         </div>
@@ -72,7 +75,8 @@
                                 请输入一个密码
                             </h2>
                             <b-field label="密码">
-                                <b-input v-model="questionPassword" placeholder="请输入密码" required type="password" password-reveal></b-input>
+                                <b-input v-model="questionPassword" placeholder="请输入密码" required type="password"
+                                    password-reveal></b-input>
                             </b-field>
                             <button class="button is-rounded" v-on:click="verifyPassword">确定</button>
                         </div>
@@ -90,44 +94,70 @@
                                 请输入题目和选项
                             </h2>
                             <b-field label="题目题干">
-                                <b-input type="textarea" minlength="2" maxlength="500" placeholder="请输入题目">
+                                <b-input type="textarea" minlength="2" maxlength="500" placeholder="请输入题目" required
+                                    v-model="questionText">
                                 </b-input>
                             </b-field>
                             <b-field label="第一个选项">
-                                <b-input minlength="1" maxlength="500" placeholder="请输入第一个选项" expanded>
+                                <b-input minlength="1" maxlength="500" placeholder="请输入第一个选项" expanded required
+                                    v-model="choiceA.choice_text">
                                 </b-input>
                             </b-field>
                             <b-field label="第二个选项">
-                                <b-input minlength="1" maxlength="500" placeholder="请输入第二个选项" expanded>
+                                <b-input minlength="1" maxlength="500" placeholder="请输入第二个选项" expanded
+                                    v-model="choiceB.choice_text">
                                 </b-input>
                             </b-field>
                             <b-field label="第三个选项">
-                                <b-input minlength="1" maxlength="500" placeholder="请输入第三个选项" expanded>
+                                <b-input minlength="1" maxlength="500" placeholder="请输入第三个选项" expanded
+                                    v-model="choiceC.choice_text">
                                 </b-input>
                             </b-field>
                             <b-field label="第四个选项">
-                                <b-input minlength="1" maxlength="500" placeholder="请输入第四个选项" expanded>
+                                <b-input minlength="1" maxlength="500" placeholder="请输入第四个选项" expanded
+                                    v-model="choiceD.choice_text">
                                 </b-input>
                             </b-field>
                             <p><b>正确选项</b></p>
                             <div class="block">
-                                <b-checkbox type="is-success" native-value="A" v-model="correctChoices">
+                                <b-switch type="is-success" native-value="A" v-model="choiceA.choice_correct">
                                     选项一
-                                </b-checkbox>
-                                <b-checkbox type="is-success" native-value="B" v-model="correctChoices">
+                                </b-switch>
+                                <b-switch type="is-success" native-value="B" v-model="choiceB.choice_correct">
                                     选项二
-                                </b-checkbox>
-                                <b-checkbox type="is-success" native-value="C" v-model="correctChoices">
+                                </b-switch>
+                                <b-switch type="is-success" native-value="C" v-model="choiceC.choice_correct">
                                     选项三
-                                </b-checkbox>
-                                <b-checkbox type="is-success" native-value="D" v-model="correctChoices">
+                                </b-switch>
+                                <b-switch type="is-success" native-value="D" v-model="choiceD.choice_correct">
                                     选项四
-                                </b-checkbox>
+                                </b-switch>
                             </div>
+                            <button class="button is-rounded" v-on:click="publishQuestion" v-if="questionType == 'new'">发布问题</button>
+                            <button class="button is-rounded" v-on:click="updateQuestion" v-if="questionType == 'existing'">更新问题</button>
                         </div>
                     </div>
                 </div>
             </div>
+        </section>
+
+        <section class="hero is-small" v-if="currentStep == 'publishStep'">
+            <div class="hero-body">
+                <div class="container">
+                    <div class="columns">
+                        <div class="column is-6 is-offset-3">
+                            <h2 class="title is-4 has-text-centered">
+                                您发布的问题
+                            </h2>
+                            <p>
+                                <b>问题ID: </b>{{ questionId }}
+                            </p>
+                            <div id="qrcode"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </section>
 
     </div>
@@ -139,13 +169,45 @@
                 questionType: "existing",
                 questionId: "",
                 questionPassword: "",
-                correctChoices: []
+                questionText: "",
+                choiceA: {
+                    "choice_index": "A",
+                    "choice_text": "",
+                    "choice_correct": false
+                },
+                choiceB: {
+                    "choice_index": "B",
+                    "choice_text": "",
+                    "choice_correct": false
+                },
+                choiceC: {
+                    "choice_index": "C",
+                    "choice_text": "",
+                    "choice_correct": false
+                },
+                choiceD: {
+                    "choice_index": "D",
+                    "choice_text": "",
+                    "choice_correct": false
+                }
             },
+
+            computed: {
+                questionChoices: function () {
+                    var choices = [];
+                    choices.push(this.choiceA);
+                    choices.push(this.choiceB);
+                    choices.push(this.choiceC);
+                    choices.push(this.choiceD);
+                    return choices
+                }
+            },
+
             methods: {
                 verifyPassword: function () {
                     // if it's existing question type, check question id and password with server
                     if (this.questionType == "existing") {
-                        url = "https://webhooks.mongodb-realm.com/api/client/v2.0/app/inclass-dhzfl/service/inClassHttp/incoming_webhook/checkPassword" + "?questionId=" + this.questionId + "&questionPassword=" + this.questionPassword;
+                        const url = "https://webhooks.mongodb-realm.com/api/client/v2.0/app/inclass-dhzfl/service/inClassHttp/incoming_webhook/checkPassword" + "?questionId=" + this.questionId + "&questionPassword=" + this.questionPassword;
                         axios.get(url)
                             .then(response => {
                                 if (response.data == "Matched") {
@@ -157,6 +219,38 @@
                     } else {
                         this.currentStep = "editQuestionStep";
                     }
+                },
+
+                publishQuestion: function () {
+                    if (this.questionText == "") {
+                        alert("请输入题目");
+                    } else {
+                        if (!(this.choiceA.choice_correct ||
+                            this.choiceB.choice_correct ||
+                            this.choiceC.choice_correct ||
+                            this.choiceD.choice_correct)) {
+                            alert("请选择至少一个正确选项");
+                        } else {
+                            const url = "https://webhooks.mongodb-realm.com/api/client/v2.0/app/inclass-dhzfl/service/inClassHttp/incoming_webhook/createQuestion";
+                            var params = new URLSearchParams();
+                            params.append("questionText", this.questionText);
+                            params.append("questionPassword", this.questionPassword);
+                            params.append("questionChoices", JSON.stringify(this.questionChoices));
+                            axios.post(url, params)
+                                .then(response => {
+                                    if (response.data == "Error") {
+                                        alert("发布失败，请稍后重试");
+                                    } else {
+                                        this.questionId = response.data.insertedId.$oid;
+                                        this.currentStep = "publishStep";
+                                    }
+                                })
+                        }
+                    }
+                },
+
+                updateQuestion: function () {
+                    
                 }
             }
         })
