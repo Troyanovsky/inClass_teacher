@@ -19,10 +19,15 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <!--QR code generator-->
     <script src="https://cdn.jsdelivr.net/npm/qrcode-js-package@1.0.4/qrcode.min.js"></script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+    </style>
 </head>
 
 <body>
-    <div id="app">
+    <div id="app" v-cloak>
         <section class="hero">
             <div class="hero-body">
                 <div class="container">
@@ -133,8 +138,10 @@
                                     选项四
                                 </b-switch>
                             </div>
-                            <button class="button is-rounded" v-on:click="publishQuestion" v-if="questionType == 'new'">发布问题</button>
-                            <button class="button is-rounded" v-on:click="updateQuestion" v-if="questionType == 'existing'">更新问题</button>
+                            <button class="button is-rounded" v-on:click="publishQuestion"
+                                v-if="questionType == 'new'">发布问题</button>
+                            <button class="button is-rounded" v-on:click="updateQuestion"
+                                v-if="questionType == 'existing'">更新问题</button>
                         </div>
                     </div>
                 </div>
@@ -250,7 +257,7 @@
                 },
 
                 updateQuestion: function () {
-                    
+
                 }
             }
         })
